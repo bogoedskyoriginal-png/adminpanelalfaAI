@@ -57,7 +57,7 @@ const storageKey = "alfa-ai-demo-state";
 const nowIso = new Date().toISOString();
 
 const defaultState = {
-  stateVersion: 4,
+  stateVersion: 5,
   users: ["u100", "u200"],
   notifications: [],
   banners: [],
@@ -68,6 +68,7 @@ const defaultState = {
 };
 let state = loadState();
 state = ensureAssistants(state);
+state = normalizeAssistantsAvatars(state);
 state = ensureBanners(state);
 state = clearLegacyNotifications(state);
 let currentUser = {
@@ -448,7 +449,10 @@ function assistantsNeedReset(list) {
     (assistant) =>
       hasBrokenText(assistant.name) ||
       hasBrokenText(assistant.description) ||
-      hasBrokenText(assistant.prompt)
+      hasBrokenText(assistant.prompt) ||
+      !assistant.avatar ||
+      (assistant.avatar.kind === "image" && !assistant.avatar.value) ||
+      (assistant.avatar.kind === "color" && !assistant.avatar.value)
   );
 }
 
@@ -459,6 +463,24 @@ function ensureAssistants(data) {
   }
   data.stateVersion = defaultState.stateVersion;
   saveState();
+  return data;
+}
+
+function normalizeAssistantsAvatars(data) {
+  let changed = false;
+  data.assistants = data.assistants.map((assistant) => {
+    if (assistant.avatar && assistant.avatar.value) return assistant;
+    changed = true;
+    return {
+      ...assistant,
+      avatar: {
+        kind: "color",
+        value: "#e59aa5",
+        initials: getInitials(assistant.name || "AI")
+      }
+    };
+  });
+  if (changed) saveState();
   return data;
 }
 
@@ -817,10 +839,30 @@ function renderUserAssistants() {
   visible.forEach((assistant) => {
     const card = document.createElement("div");
     card.className = "assistant-card";
+
+    const header = document.createElement("div");
+    header.className = "assistant-header";
+
+    const avatar = document.createElement("div");
+    avatar.className = "assistant-avatar";
+    if (assistant.avatar?.kind === "image") {
+      const img = document.createElement("img");
+      img.src = assistant.avatar.value;
+      avatar.appendChild(img);
+    } else {
+      avatar.style.background = assistant.avatar?.value || "#e59aa5";
+      avatar.textContent = assistant.avatar?.initials || getInitials(assistant.name || "AI");
+    }
+
     const title = document.createElement("h4");
     title.textContent = assistant.name;
+
+    header.appendChild(avatar);
+    header.appendChild(title);
+
     const desc = document.createElement("p");
     desc.textContent = assistant.description;
+
     const tags = document.createElement("div");
     tags.className = "assistant-tags";
     const typeTag = document.createElement("span");
@@ -837,7 +879,7 @@ function renderUserAssistants() {
     tags.appendChild(publicTag);
     tags.appendChild(ownerTag);
 
-    card.appendChild(title);
+    card.appendChild(header);
     card.appendChild(desc);
     card.appendChild(tags);
     userAssistantsList.appendChild(card);
