@@ -993,6 +993,7 @@ function renderAdminAssistants() {
     row.appendChild(actionCell);
 
     if (openAssistantMenuId === assistant.id) {
+      row.classList.add("menu-open");
       const menu = document.createElement("div");
       menu.className = "assistant-menu";
       const editButton = document.createElement("button");

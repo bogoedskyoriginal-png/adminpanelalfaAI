@@ -641,11 +641,16 @@ button.icon {
   position: relative;
   overflow: visible;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
+  z-index: 1;
 }
 
 .assistant-row:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.assistant-row.menu-open {
+  z-index: 10;
 }
 
 .assistant-row:last-child {
@@ -706,7 +711,7 @@ button.icon {
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  z-index: 6;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   min-width: 190px;
